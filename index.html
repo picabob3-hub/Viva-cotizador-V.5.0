@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viva Estudio - Cotizador Elite</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #000000; --bg: #f8fafb; --card: #ffffff; --accent: #28a745; --history: #6f42c1; --warning: #f39200; }
+        
+        /* AJUSTE EXTRA DE SEGURIDAD */
+        input, select, textarea { box-sizing: border-box !important; }
+
+        body { font-family: sans-serif; background: var(--bg); padding: 0; color: #333; margin: 0 0 170px 0; }
+        .container { max-width: 600px; margin: auto; padding: 10px; box-sizing: border-box; }
+        
+        .black-bar { background: #000; padding: 15px; display: flex; align-items: center; justify-content: space-between; min-height: 60px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo-text-alt { font-family: 'Comfortaa', cursive; font-size: 1.8em; color: #fff; margin: 0; }
+        .logo-text-alt b { font-weight: 700; color: #f39200; }
+        #logo-preview { max-height: 45px; max-width: 180px; object-fit: contain; }
+        .btn-config { background: transparent; color: white; border: none; font-size: 28px; cursor: pointer; }
+
+        .card { 
+            background: var(--card); border-radius: 12px; padding: 12px 15px; margin-bottom: 10px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #edf2f7; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer; box-sizing: border-box;
+        }
+        .card-active { border-color: #c6f6d5; background: #f0fff4; transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.04); }
+        
+        #card_tarjetas .row-compact { gap: 15px; }
+        #card_tarjetas select { min-width: 110px; }
+
+        .switch-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .icon-indicator { width: 16px; height: 16px; background: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0; }
+        .icon-indicator::after { content: ''; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 6px solid #fff; margin-left: 2px; }
+        .switch-container strong { font-size: 14px; color: #4a5568; font-weight: 700; flex: 1; display: flex; align-items: center; }
+
+        .tgl { display: none; }
+        .tgl-btn { outline: 0; display: block; width: 30px; height: 16px; position: relative; cursor: pointer; user-select: none; background: #e2e8f0; border-radius: 15px; padding: 2px; transition: all .4s ease; }
+        .tgl-btn:after { position: relative; display: block; content: ""; width: 12px; height: 12px; left: 0; border-radius: 50%; background: #fff; transition: all .2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .tgl:checked + .tgl-btn { background: var(--accent); }
+        .tgl:checked + .tgl-btn:after { left: 14px; }
+
+        .locked-content { opacity: 0.15; filter: grayscale(1); pointer-events: none; transition: 0.3s; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        input[type="number"], select { padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; max-width: 65px; box-sizing: border-box; font-size: 14px; background: #fdfdfd; text-align: center; height: 40px; }
+        input[type="text"] { width: 100%; text-align: left; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; min-height: 45px; font-size: 15px; }
+        
+        .row-compact { display: flex; align-items: flex-end; gap: 5px; flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; align-items: center; }
+        .input-group label { margin-bottom: 2px; font-size: 9px; }
+
+        .cost-tag { flex: 1; text-align: right; font-weight: 800; font-size: 1.1em; color: #2d3748; white-space: nowrap; padding-bottom: 5px; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 250; backdrop-filter: blur(2px); }
+        #sidePanel { position: fixed; right: -100%; top: 0; width: 85%; max-width: 400px; height: 90vh; background: white; z-index: 300; transition: 0.4s; padding: 15px; display: flex; flex-direction: column; box-sizing: border-box; border-radius: 0 0 0 15px; }
+        #sidePanel.open { right: 0; }
+        .scroll-precios { flex: 1; overflow-y: auto; margin: 10px 0; border: 1px solid #f1f5f9; border-radius: 8px; padding: 5px; }
+        
+        #subModal { display: none; position: fixed; top: 12%; left: 50%; transform: translateX(-50%); width: 72%; max-width: 310px; background: white; z-index: 400; border-radius: 12px; padding: 15px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .total-box { background: #1a202c; color: white; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; text-align: center; z-index: 150; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-group button { flex: 1; padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .is-locked { opacity: 0.4; pointer-events: none !important; filter: grayscale(1); }
+        .toolbar-btn { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
+        
+        .btn-nueva { background: var(--warning); color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; }
+
+        #cuerpoPrecios input {
+            max-width: 80px !important;
+            width: 80px;
+            padding: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeModals()"></div>
+
+<div id="subModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <strong style="font-size:15px">Datos de Empresa</strong>
+        <button onclick="closeModals()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#94a3b8">&times;</button>
+    </div>
+    <textarea id="txtEmpresa" rows="6" style="font-size:13px; width:100%; box-sizing:border-box; padding:8px; border:1px solid #e2e8f0; border-radius:6px;"></textarea>
+    <div style="display:flex; gap:5px"><button class="toolbar-btn" onclick="insertarNegrilla()">🆖</button></div>
+    <button onclick="saveEmpresa()" style="background:var(--accent); color:white; width:100%; padding:12px; border-radius:8px; margin-top:10px; border:none; font-weight:bold;">💾 Guardar</button>
+</div>
+
+<div id="sidePanel">
+    <div style="display:flex; justify-content:space-between; align-items:center">
+        <h2 style="font-size:1.2em; margin:0">Ajustes</h2>
+        <button onclick="closeModals()" style="font-size:30px; border:none; background:none; color:#cbd5e0;">&times;</button>
+    </div>
+    <button onclick="abrirEmpresa()" style="width:100%; padding:10px; border-radius:6px; border:1px solid #e2e8f0; background:#f8fafb; font-size:13px; margin-top:10px">📝 Datos Empresa</button>
+    <div style="margin-top:15px"><label>Logo:</label><input type="file" id="inputLogo" onchange="uploadLogo()" style="width:100%"></div>
+    
+    <h3 style="font-size:14px; margin: 10px 0 5px 0">Añadir Nuevo Producto</h3>
+    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border: 1px solid #cbd5e1;">
+        <label style="color: #4a5568; font-size: 10px; margin-bottom: 3px;">NOMBRE DEL SERVICIO</label>
+        <input type="text" id="newProdNombre" placeholder="Ej: Diseño o Instalación" style="width:100%; max-width: 100% !important; margin-bottom: 10px; font-size: 14px; height: 40px;">
+        
+        <label style="color: #4a5568; font-size: 10px; margin-bottom: 3px;">MODALIDAD DE COBRO</label>
+        <select id="newProdModo" style="width:100%; max-width: 100% !important; height: 40px; margin-bottom: 10px; font-size: 14px;">
+            <option value="m2">Por Metro Cuadrado (An x Al)</option>
+            <option value="cm">Por Centímetro (Solo Al)</option>
+            <option value="uni">Por Unidad (Precio Fijo)</option>
+        </select>
+
+        <div style="display:flex; gap:8px; align-items: flex-end;">
+            <div style="flex:1">
+                <label style="color: #4a5568; font-size: 9px;">PRECIO PUB</label>
+                <input type="number" id="newProdPub" step="0.01" style="width:100%; max-width: none !important; height: 40px; font-size: 14px;">
+            </div>
+            <div style="flex:1">
+                <label style="color: #4a5568; font-size: 9px;">PRECIO FIN</label>
+                <input type="number" id="newProdFin" step="0.01" style="width:100%; max-width: none !important; height: 40px; font-size: 14px;">
+            </div>
+            <button onclick="agregarProductoNuevo()" style="background:var(--accent); color:white; border:none; width: 45px; height: 40px; border-radius:6px; cursor:pointer; font-size: 20px; font-weight:bold;">+</button>
+        </div>
+    </div>
+
+    <h3 style="font-size:14px; margin: 15px 0 5px 0">Precios Unitarios</h3>
+    <div class="scroll-precios"><table style="width:100%; border-collapse:collapse;" border="1" bordercolor="#f1f5f9"><thead><tr style="background:#f8fafb"><th>Item</th><th>Pub</th><th>Fin</th><th>Acc.</th></tr></thead><tbody id="cuerpoPrecios"></tbody></table></div>
+    <button onclick="savePrecios()" style="background:var(--accent); color:white; width:100%; padding:12px; border-radius:8px; border:none; font-weight:bold; cursor:pointer;">💾 Actualizar</button>
+</div>
+
+<div class="black-bar">
+    <div id="display-logo" class="logo-text-alt"><b>viva</b> estudio</div>
+    <button class="btn-config" onclick="openConfig()">⋮</button>
+</div>
+
+<div class="container">
+    <div class="card" style="border:none; background:transparent; box-shadow:none; padding:10px 0; cursor:default">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+            <label>Nombre del Cliente</label>
+            <button class="btn-nueva" onclick="window.location.reload()">+ NUEVA COTIZACIÓN</button>
+        </div>
+        <input type="text" id="nombreCliente" placeholder="Ej: Juan Pérez" style="margin-bottom:10px; width:100%; height: 45px; font-size: 16px;">
+        
+        <div style="display:flex; gap:8px; margin-bottom:10px; width:100%;">
+            <div style="flex:1; min-width: 0;">
+                <label>RUC / C.I.</label>
+                <input type="text" id="rucCliente" placeholder="0000000000" style="height: 45px; font-size: 14px; width: 100%;">
+            </div>
+            <div style="flex:1; min-width: 0;">
+                <label>Fecha</label>
+                <input type="text" id="fechaEmision" style="height: 45px; font-size: 14px; width: 100%;">
+            </div>
+        </div>
+
+        <div>
+            <label>Tipo Cliente <span style="color:var(--accent); text-transform:none;">(Obligatorio)</span></label>
+            <select id="tipoCliente" onchange="desbloquearApp()" style="max-width:100%; width:100%; font-weight:bold; height: 45px;">
+                <option value="">-- Seleccionar --</option>
+                <option value="pub">Publicista</option>
+                <option value="fin">Final</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="mainApp" class="is-locked">
+        <div id="contenedorM2"></div>
+
+        <div class="card" id="card_laser" onclick="smartToggle(event, 'laser')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Corte Láser (min)</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_laser" onclick="event.stopPropagation(); toggleCard('laser')"><label class="tgl-btn" for="chk_laser" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_laser" class="locked-content"><div class="row-compact"><div class="input-group"><label>Min</label><input type="number" id="v_laser" oninput="calcular()"></div><div class="cost-tag" id="tag_laser"></div></div></div>
+        </div>
+
+        <div class="card" id="card_instala" onclick="smartToggle(event, 'instala')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Instalación</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_instala" onclick="event.stopPropagation(); toggleCard('instala')"><label class="tgl-btn" for="chk_instala" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_instala" class="locked-content"><div class="row-compact"><div class="input-group"><label>Piso</label><select id="p_instala" onchange="calcular()"><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option><option value="p4">P4+</option></select></div><div class="input-group"><label>Viat $</label><input type="number" id="v_instala" oninput="calcular()"></div><div class="cost-tag" id="tag_instala"></div></div></div>
+        </div>
+
+        <div class="card" id="card_desinstala" onclick="smartToggle(event, 'desinstala')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Desinstalación</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_desinstala" onclick="event.stopPropagation(); toggleCard('desinstala')"><label class="tgl-btn" for="chk_desinstala" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_desinstala" class="locked-content"><div class="row-compact"><div class="input-group"><label>Piso</label><select id="p_desinstala" onchange="calcular()"><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option><option value="p4">P4+</option></select></div><div class="input-group"><label>Viat $</label><input type="number" id="v_desinstala" oninput="calcular()"></div><div class="cost-tag" id="tag_desinstala"></div></div></div>
+        </div>
+
+        <div class="card" id="card_tarjetas" onclick="smartToggle(event, 'tarjetas')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>1000 Tarjetas</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_tarjetas" onclick="event.stopPropagation(); toggleCard('tarjetas')"><label class="tgl-btn" for="chk_tarjetas" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_tarjetas" class="locked-content"><div class="row-compact"><div class="input-group"><label>Tipo</label><select id="tipoTarjeta" onchange="calcular()"><option value="estandar">Estándar</option><option value="mate">Mate</option><option value="uv">UV</option></select></div><div style="font-size:10px; display:flex; align-items:center; gap:4px; padding-bottom:10px;"><input type="checkbox" id="chkPuntas" onchange="calcular()" style="width:auto"> Puntas</div><div class="cost-tag" id="tag_tarjetas"></div></div></div>
+        </div>
+
+        <div class="card" id="card_flyers" onclick="smartToggle(event, 'flyers')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>1000 Flyers</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_flyers" onclick="event.stopPropagation(); toggleCard('flyers')"><label class="tgl-btn" for="chk_flyers" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_flyers" class="locked-content"><div class="row-compact"><div class="input-group"><label>Medida</label><select id="tipoFlyer" onchange="calcular()"><option value="a6">A6</option><option value="a5">A5</option><option value="a4">A4</option></select></div><div class="cost-tag" id="tag_flyers"></div></div></div>
+        </div>
+
+        <div class="card" id="card_papel" onclick="smartToggle(event, 'papel')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Imp. Papel (1000)</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_papel" onclick="event.stopPropagation(); toggleCard('papel')"><label class="tgl-btn" for="chk_papel" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_papel" class="locked-content"><div class="row-compact"><div class="input-group"><label>Medida</label><select id="tipoPapel" onchange="calcular()" style="max-width: 130px !important; min-width: 120px !important; text-align: left;">
+                <option value="a3">A3 (29.7x42cm)</option><option value="p3550">35x50 cm</option></select></div><div class="cost-tag" id="tag_papel"></div></div></div>
+        </div>
+
+        <div class="card" id="card_letras" onclick="smartToggle(event, 'letras')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Letras 3D (cm)</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_letras" onclick="event.stopPropagation(); toggleCard('letras')"><label class="tgl-btn" for="chk_letras" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_letras" class="locked-content"><div id="contLetras"></div><div class="cost-tag" id="tag_letras" style="width:100%; text-align:right"></div></div>
+        </div>
+
+        <div class="card" id="card_extra1" onclick="smartToggle(event, 'extra1')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Servicio Extra 1</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_extra1" onclick="event.stopPropagation(); toggleCard('extra1')"><label class="tgl-btn" for="chk_extra1" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_extra1" class="locked-content"><div class="row-compact">
+                <div class="input-group" style="align-items:flex-start"><label>Descripción</label><input type="text" id="extra1Desc" style="max-width:180px; height: 42px; font-size: 14px;"></div>
+                <div class="input-group"><label>Precio $</label><input type="number" id="extra1Precio" oninput="calcular()" style="max-width: 90px !important; height: 42px;"></div>
+            </div></div>
+        </div>
+        <div class="card" id="card_extra2" onclick="smartToggle(event, 'extra2')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Servicio Extra 2</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_extra2" onclick="event.stopPropagation(); toggleCard('extra2')"><label class="tgl-btn" for="chk_extra2" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_extra2" class="locked-content"><div class="row-compact">
+                <div class="input-group" style="align-items:flex-start"><label>Descripción</label><input type="text" id="extra2Desc" style="max-width:180px; height: 42px; font-size: 14px;"></div>
+                <div class="input-group"><label>Precio $</label><input type="number" id="extra2Precio" oninput="calcular()" style="max-width: 90px !important; height: 42px;"></div>
+            </div></div>
+        </div>
+        <div class="card" id="card_extra3" onclick="smartToggle(event, 'extra3')">
+            <div class="switch-container"><strong><span class="icon-indicator"></span>Servicio Extra 3</strong><div class="toggle-wrapper"><input class="tgl" type="checkbox" id="chk_extra3" onclick="event.stopPropagation(); toggleCard('extra3')"><label class="tgl-btn" for="chk_extra3" onclick="event.stopPropagation();"></label></div></div>
+            <div id="content_extra3" class="locked-content"><div class="row-compact">
+                <div class="input-group" style="align-items:flex-start"><label>Descripción</label><input type="text" id="extra3Desc" style="max-width:180px; height: 42px; font-size: 14px;"></div>
+                <div class="input-group"><label>Precio $</label><input type="number" id="extra3Precio" oninput="calcular()" style="max-width: 90px !important; height: 42px;"></div>
+            </div></div>
+        </div>
+    </div>
+</div>
+
+<div class="total-box">
+    <div style="display:flex; justify-content:space-around; font-size:0.85em; margin-bottom:5px; opacity:0.8">
+        <span>Sub: $<span id="subtotal">0.00</span></span>
+        <span>IVA: $<span id="iva">0.00</span></span>
+    </div>
+    <div style="font-size:1.2em">Total: <b>$<span id="total">0.00</span></b></div>
+    <div class="btn-group">
+        <button style="background:#25d366" onclick="sendWs()">WhatsApp</button>
+        <button style="background:#4a5568" onclick="generarProforma()">PDF</button>
+    </div>
+</div>
+
+<script>
+// REGISTRO DEL SERVICE WORKER (Indispensable para instalar)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+  });
+}
+
+const CLAVES_M2 = ['lona', 'adh', 'micro', 'pana', 'lam', 'cin', 'est', 'tensado', 'alu', 'mdf', 'arenado', 'plotter', 'caja'];
+const DIC_NOMBRES = { lona:"Lona (m²)", adh:"Adhesivo (m²)", micro:"Microperforado (m²)", pana:"Panaflex (m²)", lam:"Laminado (m²)", cin:"Cintra (m²)", est:"Estructura (m²)", tensado:"Tensado (m²)", alu:"Alucobond (m²)", mdf:"MDF (m²)", arenado:"Vinil Arenado (m²)", plotter:"Corte Plóter (m²)", caja:"Caja de Luz (m²)", laser:"Corte Láser (min)", letras:"Letras 3D (cm)", instala:"Instalación", desinstala:"Desinstalación", tarjetas:"Tarjetas", flyers:"Flyers", papel:"Papel" };
+
+let preciosBase = JSON.parse(localStorage.getItem('viva_precios_v4')) || {
+    lona:{pub:5.5,fin:8}, adh:{pub:5.5,fin:8}, micro:{pub:7,fin:9}, pana:{pub:9,fin:13}, lam:{pub:4,fin:5}, cin:{pub:8,fin:10}, est:{pub:35,fin:35}, alu:{pub:70,fin:70}, tensado:{pub:7,fin:7}, mdf:{pub:8,fin:10}, arenado:{pub:6.5,fin:10}, plotter:{pub:3,fin:4.5}, caja:{pub:65,fin:75},
+    laser:{pub:0.35,fin:0.35}, p1:{pub:15,fin:15}, p2:{pub:20,fin:20}, p3:{pub:30,fin:30}, p4:{pub:45,fin:45},
+    tarjeta_estandar:{pub:15,fin:30}, tarjeta_mate:{pub:45,fin:45}, tarjeta_uv:{pub:50,fin:50}, flyer_a6:{pub:40,fin:40}, flyer_a5:{pub:55,fin:55}, flyer_a4:{pub:110,fin:110}, papel_a3:{pub:180,fin:180}, papel_p3550:{pub:190,fin:190}, letras:{pub:1.5,fin:1.5}
+};
+
+let memAncho="", memAlto="";
+
+function inicializarUI() {
+    document.getElementById('fechaEmision').value = new Date().toLocaleDateString();
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todasLasClaves = [...CLAVES_M2, ...Object.keys(productosExtra)];
+    const cont = document.getElementById('contenedorM2'); 
+    cont.innerHTML = "";
+
+    todasLasClaves.forEach(id => {
+        const prod = productosExtra[id] || { modo: 'm2' }; 
+        const nombreMostrar = DIC_NOMBRES[id] || prod.nombre;
+
+        let camposHTML = '';
+        if (prod.modo === 'm2') {
+            camposHTML = `
+                <div class="input-group"><label>An</label><input type="number" id="${id}Ancho" oninput="syncM('${id}','w')"></div>
+                <div class="input-group"><label>Al</label><input type="number" id="${id}Alto" oninput="syncM('${id}','h')"></div>`;
+        } else if (prod.modo === 'cm') {
+            camposHTML = `<div class="input-group"><label>cm</label><input type="number" id="${id}Alto" oninput="calcular()"></div>`;
+        }
+
+        cont.innerHTML += `
+        <div class="card" id="card_${id}" onclick="smartToggle(event, '${id}')">
+            <div class="switch-container">
+                <strong><span class="icon-indicator"></span>${nombreMostrar}</strong>
+                <div class="toggle-wrapper">
+                    <input class="tgl" type="checkbox" id="chk_${id}" onclick="event.stopPropagation(); toggleCard('${id}')">
+                    <label class="tgl-btn" for="chk_${id}" onclick="event.stopPropagation();"></label>
+                </div>
+            </div>
+            <div id="content_${id}" class="locked-content">
+                <div class="row-compact">
+                    ${camposHTML}
+                    <div class="input-group"><label>CANT.</label><input type="number" id="${id}Cant" value="1" oninput="calcular()"></div>
+                    <div class="cost-tag" id="tag_${id}"></div>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    const ltn = document.getElementById('contLetras'); 
+    ltn.innerHTML = "";
+    for(let i=1; i<=5; i++) { 
+        ltn.innerHTML += `<div class="row-compact" style="margin-bottom:5px"><div class="input-group"><label>Alt</label><input type="number" id="letrasAlto${i}" oninput="calcular()"></div><div class="input-group"><label>Cant</label><input type="number" id="letrasCant${i}" oninput="calcular()"></div><div id="ltag_${i}" style="font-size:0.8em; width:50px; text-align:right; font-weight:bold; color:#718096"></div></div>`; 
+    }
+    renderAjustes(); 
+    loadBranding();
+}
+
+function desbloquearApp() {
+    const selector = document.getElementById('tipoCliente').value;
+    if(selector !== "") document.getElementById('mainApp').classList.remove('is-locked');
+    else document.getElementById('mainApp').classList.add('is-locked');
+    calcular();
+}
+
+function smartToggle(event, id) {
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT' || event.target.className === 'tgl-btn') return;
+    const chk = document.getElementById('chk_' + id);
+    if(chk) {
+        chk.checked = !chk.checked;
+        toggleCard(id);
+    }
+}
+
+function toggleCard(id) {
+    const chk = document.getElementById('chk_'+id).checked;
+    const card = document.getElementById('card_'+id);
+    const content = document.getElementById('content_'+id);
+    if(card) card.classList.toggle('card-active', chk);
+    if(chk && content) {
+        content.classList.remove('locked-content');
+        if(document.getElementById(id+"Ancho") && document.getElementById(id+"Ancho").value === "") document.getElementById(id+"Ancho").value = memAncho;
+        if(document.getElementById(id+"Alto") && document.getElementById(id+"Alto").value === "") document.getElementById(id+"Alto").value = memAlto;
+    } else if(content) content.classList.add('locked-content');
+    calcular();
+}
+
+function calcular() {
+    const tipo = document.getElementById('tipoCliente').value; if(!tipo) return;
+    const pK = tipo === 'pub' ? 'pub' : 'fin';
+    let sub = 0; const val = (id) => parseFloat(document.getElementById(id).value) || 0;
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todasLasClavesCalculo = [...CLAVES_M2, ...Object.keys(productosExtra)];
+
+    todasLasClavesCalculo.forEach(id => {
+        if(document.getElementById('chk_'+id) && document.getElementById('chk_'+id).checked) {
+            let cant = val(id+'Cant') || 1;
+            let pUnit = preciosBase[id][pK];
+            let totalItem = 0;
+            let prodInfo = productosExtra[id] || { modo: 'm2' };
+
+            if (prodInfo.modo === 'm2') {
+                totalItem = val(id+'Ancho') * val(id+'Alto') * pUnit * cant;
+            } else if (prodInfo.modo === 'cm') {
+                totalItem = val(id+'Alto') * pUnit * cant;
+            } else if (prodInfo.modo === 'uni') {
+                totalItem = pUnit * cant;
+            }
+
+            if(document.getElementById('tag_'+id)) document.getElementById('tag_'+id).innerText = "$"+totalItem.toFixed(2); 
+            sub += totalItem;
+        } else {
+            if(document.getElementById('tag_'+id)) document.getElementById('tag_'+id).innerText = "";
+        }
+    });
+
+    if(document.getElementById('chk_laser').checked) { let c = val('v_laser')*preciosBase.laser[pK]; document.getElementById('tag_laser').innerText = "$"+c.toFixed(2); sub += c; }
+    ['instala', 'desinstala'].forEach(s => {
+        if(document.getElementById('chk_'+s).checked) { let c = preciosBase[document.getElementById('p_'+s).value][pK] + val('v_'+s); document.getElementById('tag_'+s).innerText = "$"+c.toFixed(2); sub += c; }
+    });
+    if(document.getElementById('chk_tarjetas').checked) {
+        let c = preciosBase['tarjeta_'+document.getElementById('tipoTarjeta').value][pK];
+        if(document.getElementById('chkPuntas').checked) c += 5;
+        document.getElementById('tag_tarjetas').innerText = "$"+c.toFixed(2); sub += c;
+    }
+    if(document.getElementById('chk_flyers').checked) { let c = preciosBase['flyer_'+document.getElementById('tipoFlyer').value][pK]; document.getElementById('tag_flyers').innerText = "$"+c.toFixed(2); sub += c; }
+    if(document.getElementById('chk_papel').checked) { let c = preciosBase['papel_'+document.getElementById('tipoPapel').value][pK]; document.getElementById('tag_papel').innerText = "$"+c.toFixed(2); sub += c; }
+    if(document.getElementById('chk_letras').checked) {
+        let tL = 0; for(let i=1; i<=5; i++){ let f = val('letrasAlto'+i)*val('letrasCant'+i)*preciosBase.letras[pK]; if(document.getElementById('ltag_'+i)) document.getElementById('ltag_'+i).innerText = f>0?"$"+f.toFixed(2):""; tL += f; }
+        document.getElementById('tag_letras').innerText = "$"+tL.toFixed(2); sub += tL;
+    }
+    [1, 2, 3].forEach(i => { if(document.getElementById('chk_extra'+i).checked) sub += val('extra'+i+'Precio'); });
+
+    document.getElementById('subtotal').innerText = sub.toFixed(2);
+    document.getElementById('iva').innerText = (sub * 0.15).toFixed(2);
+    document.getElementById('total').innerText = (sub * 1.15).toFixed(2);
+}
+
+function syncM(id, axis) { if(axis==="w") memAncho=document.getElementById(id+"Ancho").value; else memAlto=document.getElementById(id+"Alto").value; calcular(); }
+function openConfig() { document.getElementById('sidePanel').classList.add('open'); document.getElementById('overlay').style.display='block'; history.pushState({modal:'ajustes'}, ""); }
+function abrirEmpresa() { document.getElementById('subModal').style.display='block'; history.pushState({modal:'empresa'}, ""); }
+function closeModals() { document.getElementById('subModal').style.display='none'; document.getElementById('sidePanel').classList.remove('open'); document.getElementById('overlay').style.display='none'; }
+window.onpopstate = function(event) { if (!event.state) closeModals(); else if (event.state.modal === 'ajustes') { document.getElementById('subModal').style.display='none'; document.getElementById('sidePanel').classList.add('open'); } };
+
+function insertarNegrilla() {
+    const area = document.getElementById('txtEmpresa'); const start = area.selectionStart; const end = area.selectionEnd;
+    area.value = area.value.substring(0, start) + "*" + area.value.substring(start, end) + "*" + area.value.substring(end);
+    area.focus();
+}
+
+function saveEmpresa() { localStorage.setItem('viva_emp_txt', document.getElementById('txtEmpresa').value); alert("Guardado"); closeModals(); }
+function uploadLogo() { const f = document.getElementById('inputLogo').files[0]; const r = new FileReader(); r.onloadend = () => { localStorage.setItem('viva_logo', r.result); loadBranding(); }; if(f) r.readAsDataURL(f); }
+function loadBranding() { const l=localStorage.getItem('viva_logo'); if(l) document.getElementById('display-logo').innerHTML=`<img src="${l}" id="logo-preview">`; document.getElementById('txtEmpresa').value=localStorage.getItem('viva_emp_txt')||""; }
+
+function renderAjustes() { 
+    const b = document.getElementById('cuerpoPrecios'); b.innerHTML = ""; 
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todas = [...CLAVES_M2, ...Object.keys(productosExtra), 'laser', 'p1', 'p2', 'p3', 'p4', 'tarjeta_estandar', 'tarjeta_mate', 'tarjeta_uv', 'flyer_a6', 'flyer_a5', 'flyer_a4', 'papel_a3', 'papel_p3550', 'letras'];
+
+    todas.forEach(id => { 
+        if(preciosBase[id]){
+            const nombreCompleto = DIC_NOMBRES[id] || (productosExtra[id] ? productosExtra[id].nombre : id); 
+            let botonBorrar = id.startsWith('ext_') ? `<td align="center"><button onclick="eliminarProducto('${id}')" style="background:none; border:none; color:red; cursor:pointer; font-size:16px;">🗑️</button></td>` : `<td></td>`;
+            b.innerHTML += `<tr><td>${nombreCompleto}</td><td><input type="number" id="adj_pub_${id}" value="${preciosBase[id].pub}" style="width:40px"></td><td><input type="number" id="adj_fin_${id}" value="${preciosBase[id].fin}" style="width:40px"></td>${botonBorrar}</tr>`; 
+        }
+    }); 
+}
+
+function savePrecios() { 
+    Object.keys(preciosBase).forEach(id => { 
+        if(document.getElementById("adj_pub_"+id)) {
+            preciosBase[id].pub = parseFloat(document.getElementById("adj_pub_"+id).value); 
+            preciosBase[id].fin = parseFloat(document.getElementById("adj_fin_"+id).value); 
+        }
+    }); 
+    localStorage.setItem('viva_precios_v4', JSON.stringify(preciosBase)); 
+    alert("Guardado"); 
+    location.reload(); 
+}
+
+function sendWs() {
+    const cliente = document.getElementById('nombreCliente').value || "Cliente General";
+    const sub = document.getElementById('subtotal').innerText;
+    const iva = document.getElementById('iva').innerText;
+    const total = document.getElementById('total').innerText;
+    const pK = document.getElementById('tipoCliente').value === 'pub' ? 'pub' : 'fin';
+    const val = (id) => parseFloat(document.getElementById(id).value) || 0;
+    let msg = `*VIVA ESTUDIO - COTIZACIÓN*%0A`;
+    msg += `*Cliente:* ${cliente}%0A----------------------------%0A`;
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todasLasClaves = [...CLAVES_M2, ...Object.keys(productosExtra)];
+
+    todasLasClaves.forEach(id => {
+        if(document.getElementById('chk_'+id) && document.getElementById('chk_'+id).checked) {
+            let cant = val(id+'Cant') || 1;
+            let pUnit = preciosBase[id][pK];
+            let totalItem = 0;
+            let prodInfo = productosExtra[id] || { modo: 'm2' };
+            let nombre = DIC_NOMBRES[id] || prodInfo.nombre;
+
+            let detalleMedida = "";
+            if (prodInfo.modo === 'm2') {
+                totalItem = val(id+'Ancho') * val(id+'Alto') * pUnit * cant;
+                detalleMedida = `(${val(id+'Ancho')}x${val(id+'Alto')}m)`;
+            } else if (prodInfo.modo === 'cm') {
+                totalItem = val(id+'Alto') * pUnit * cant;
+                detalleMedida = `(${val(id+'Alto')}cm)`;
+            } else {
+                totalItem = pUnit * cant;
+            }
+
+            msg += `• ${nombre} ${detalleMedida} x${cant}: *$${totalItem.toFixed(2)}*%0A`;
+        }
+    });
+
+    if(document.getElementById('chk_laser').checked) msg += `• Corte Láser (${val('v_laser')} min): *$${(val('v_laser') * preciosBase.laser[pK]).toFixed(2)}*%0A`;
+    if(document.getElementById('chk_instala').checked) msg += `• Instalación: *$${(preciosBase[document.getElementById('p_instala').value][pK] + val('v_instala')).toFixed(2)}*%0A`;
+    if(document.getElementById('chk_desinstala').checked) msg += `• Desinstalación: *$${(preciosBase[document.getElementById('p_desinstala').value][pK] + val('v_desinstala')).toFixed(2)}*%0A`;
+    if(document.getElementById('chk_tarjetas').checked) msg += `• 1000 Tarjetas ${document.getElementById('tipoTarjeta').value}: *$${document.getElementById('tag_tarjetas').innerText}*%0A`;
+    if(document.getElementById('chk_flyers').checked) msg += `• 1000 Flyers ${document.getElementById('tipoFlyer').value}: *$${document.getElementById('tag_flyers').innerText}*%0A`;
+    [1, 2, 3].forEach(i => { if(document.getElementById('chk_extra'+i).checked) msg += `• ${document.getElementById('extra'+i+'Desc').value || 'Extra'}: *$${val('extra'+i+'Precio').toFixed(2)}*%0A`; });
+    
+    msg += `----------------------------%0A`;
+    msg += `*Subtotal:* $${sub}%0A*IVA (15%):* $${iva}%0A*TOTAL:* $${total}`;
+    window.open(`https://wa.me/?text=${msg}`);
+}
+
+function generarProforma() {
+    const cliente = document.getElementById('nombreCliente').value || "Cliente General";
+    const ruc = document.getElementById('rucCliente').value || "---";
+    const fecha = document.getElementById('fechaEmision').value;
+    const logo = localStorage.getItem('viva_logo') || "";
+    const empresaTxt = (localStorage.getItem('viva_emp_txt') || "").replace(/\*(.*?)\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+    let filas = ""; const pK = document.getElementById('tipoCliente').value === 'pub' ? 'pub' : 'fin'; const val = (id) => parseFloat(document.getElementById(id).value) || 0;
+    
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todasLasClaves = [...CLAVES_M2, ...Object.keys(productosExtra)];
+
+    todasLasClaves.forEach(id => { 
+        if(document.getElementById('chk_'+id) && document.getElementById('chk_'+id).checked) {
+            let cant = val(id+'Cant') || 1;
+            let pUnit = preciosBase[id][pK];
+            let totalItem = 0;
+            let prodInfo = productosExtra[id] || { modo: 'm2' };
+            let nombre = DIC_NOMBRES[id] || prodInfo.nombre;
+
+            let desc = nombre;
+            if (prodInfo.modo === 'm2') {
+                totalItem = val(id+'Ancho') * val(id+'Alto') * pUnit * cant;
+                desc += ` (${val(id+'Ancho')}m x ${val(id+'Alto')}m)`;
+            } else if (prodInfo.modo === 'cm') {
+                totalItem = val(id+'Alto') * pUnit * cant;
+                desc += ` (${val(id+'Alto')}cm)`;
+            } else {
+                totalItem = pUnit * cant;
+            }
+            filas += `<tr><td>${desc} | Cant: ${cant}</td><td align="right">$${totalItem.toFixed(2)}</td></tr>`; 
+        }
+    });
+
+    const v = window.open("", "_blank");
+    v.document.write(`<html><head><title>Proforma</title><style>@page{size:A4;margin:0}body{font-family:sans-serif;margin:0;padding:0}.black-header{background:black!important;color:white!important;padding:13px 40px;display:flex;justify-content:space-between;align-items:center;width:90%;margin:15px auto;border-radius:8px}.logo-img{max-height:55px}.emp-info{text-align:right;font-size:7pt;line-height:1.1;color:white!important;max-width:350px;border-right:2px solid #28a745;padding-right:10px}.content{padding:40px 60px}h2{text-align:center;font-size:24pt;color:#d3d3d3}.cli-box{display:flex;justify-content:space-between;border-bottom:2px solid black;padding-bottom:10px;margin-bottom:30px}table{width:100%;border-collapse:collapse}th{background:#eee;padding:12px;border:1px solid #ddd}td{padding:6px 12px;border:1px solid #ddd}.total-area{text-align:right;margin-top:30px;font-size:14pt}.firma-area{margin-top:80px;display:flex;justify-content:flex-end}.firma-line{border-top:1px solid black;width:220px;text-align:center;padding-top:5px;font-weight:bold}</style></head><body><div class="black-header"><div>${logo?'<img src="'+logo+'" class="logo-img">':"<h1>VIVA ESTUDIO</h1>"}</div><div class="emp-info">${empresaTxt}</div></div><div class="content"><h2>PROFORMA</h2><div class="cli-box"><div><strong>CLIENTE:</strong> ${cliente.toUpperCase()}<br><strong>RUC:</strong> ${ruc}</div><div><strong>FECHA:</strong> ${fecha}</div></div><table><thead><tr><th>Descripción</th><th width="120" style="text-align:right">Total</th></tr></thead><tbody>${filas}</tbody></table><div class="total-area">Subtotal: $${document.getElementById('subtotal').innerText}<br>IVA (15%): $${document.getElementById('iva').innerText}<br><strong style="font-size:18pt">TOTAL: $${document.getElementById('total').innerText}</strong></div><div class="firma-area"><div class="firma-line">Arq. Daniela Villacrés<br><small>ADMINISTRADORA</small></div></div></div><script>window.print();<\/script></body></html>`);
+    v.document.close();
+}
+
+function eliminarProducto(id) {
+    if(confirm("¿Estás seguro de que deseas eliminar este producto permanentemente?")) {
+        let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+        delete productosExtra[id];
+        localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra));
+        delete preciosBase[id];
+        localStorage.setItem('viva_precios_v4', JSON.stringify(preciosBase));
+        location.reload();
+    }
+}
+
+function agregarProductoNuevo() {
+    const nombre = document.getElementById('newProdNombre').value;
+    const modo = document.getElementById('newProdModo').value;
+    const pPub = parseFloat(document.getElementById('newProdPub').value);
+    const pFin = parseFloat(document.getElementById('newProdFin').value);
+
+    if(!nombre || isNaN(pPub) || isNaN(pFin)) {
+        alert("Por favor llena todos los campos");
+        return;
+    }
+
+    const id = "ext_" + Date.now(); 
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    productosExtra[id] = { nombre: nombre, pub: pPub, fin: pFin, modo: modo };
+    localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra));
+
+    preciosBase[id] = { pub: pPub, fin: pFin };
+    localStorage.setItem('viva_precios_v4', JSON.stringify(preciosBase));
+
+    alert("Producto añadido exitosamente");
+    location.reload();
+}
+
+inicializarUI();
+</script>
+</body>
+</html>

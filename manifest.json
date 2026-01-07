@@ -1,0 +1,28 @@
+{
+  "name": "Viva Estudio Cotizador",
+  "short_name": "VivaCotiza",
+  "description": "Sistema Elite de Cotizaciones para Viva Estudio",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f8fafb",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "VIVAICONO.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "VIVAICONO.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "VIVAICONO.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
