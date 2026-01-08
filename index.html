@@ -427,6 +427,7 @@ function savePrecios() {
 }
 
 function sendWs() {
+    guardarEnHistorial(); // <--- AGREGA ESTA LÍNEA AQUÍ
     const cliente = document.getElementById('nombreCliente').value || "Cliente General";
     const sub = document.getElementById('subtotal').innerText;
     const iva = document.getElementById('iva').innerText;
@@ -474,6 +475,7 @@ function sendWs() {
 }
 
 function generarProforma() {
+    guardarEnHistorial();
     const cliente = document.getElementById('nombreCliente').value || "Cliente General";
     const ruc = document.getElementById('rucCliente').value || "---";
     const fecha = document.getElementById('fechaEmision').value;
@@ -554,8 +556,44 @@ function agregarProductoNuevo() {
     alert("Producto añadido exitosamente");
     location.reload();
 }
+// NUEVA FUNCIÓN PARA EL HISTORIAL
+async function guardarEnHistorial() {
+    const cliente = document.getElementById('nombreCliente').value || "Cliente General";
+    const total = document.getElementById('total').innerText;
+    const pK = document.getElementById('tipoCliente').value === 'pub' ? 'pub' : 'fin';
+    
+    let detalleTxt = "";
+    let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || {};
+    let todasLasClaves = [...CLAVES_M2, ...Object.keys(productosExtra)];
+    
+    todasLasClaves.forEach(id => {
+        if(document.getElementById('chk_'+id) && document.getElementById('chk_'+id).checked) {
+            detalleTxt += (DIC_NOMBRES[id] || productosExtra[id].nombre) + ", ";
+        }
+    });
+    if(document.getElementById('chk_laser').checked) detalleTxt += "Láser, ";
+    if(document.getElementById('chk_instala').checked) detalleTxt += "Instalación, ";
+    if(document.getElementById('chk_tarjetas').checked) detalleTxt += "Tarjetas, ";
 
+    const datosVenta = {
+        fecha: document.getElementById('fechaEmision').value,
+        cliente: cliente.toUpperCase(),
+        ruc: document.getElementById('rucCliente').value || "---",
+        detalle: detalleTxt.slice(0, -2),
+        total: total,
+        tipo: pK.toUpperCase()
+    };
+
+    // TU URL DE GOOGLE
+    fetch("https://script.google.com/macros/s/AKfycbw_qjrxYqS2-0bspFBmXLkTl7b0YURDGqApGOjXR-KmbP9MmPzaiANQyZvc2n8aRGCH-A/exec", {
+        method: "POST",
+        mode: "no-cors",
+        cache: "no-cache",
+        body: JSON.stringify(datosVenta)
+    });
+}
 inicializarUI();
 </script>
 </body>
 </html>
+
