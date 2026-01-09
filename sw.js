@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viva-estudio-v12'; 
+const CACHE_NAME = 'viva-estudio-v13'; 
 const ASSETS = [
   './',
   './index.html',
@@ -35,5 +35,6 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
 
 
