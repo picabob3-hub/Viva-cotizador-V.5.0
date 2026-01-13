@@ -246,7 +246,7 @@ if ('serviceWorker' in navigator) {
 }
 
 const CLAVES_M2 = ['lona', 'adh', 'micro', 'pana', 'lam', 'cin', 'est', 'tensado', 'alu', 'mdf', 'arenado', 'plotter', 'caja'];
-const DIC_NOMBRES = { lona:"Lona (m²)", adh:"Adhesivo (m²)", micro:"Microperforado (m²)", pana:"Panaflex (m²)", lam:"Laminado (m²)", cin:"Cintra (m²)", est:"Estructura (m²)", tensado:"Tensado (m²)", alu:"Alucobond (m²)", mdf:"MDF (m²)", arenado:"Vinil Arenado (m²)", plotter:"Corte Plóter (m²)", caja:"Caja de Luz (m²)", laser:"Corte Láser (min)", letras:"Letras 3D (cm)", instala:"Instalación", desinstala:"Desinstalación", tarjetas:"Tarjetas", flyers:"Flyers", papel:"Papel" };
+const DIC_NOMBRES = { lona:"Lona (m²)", adh:"Adhesivo (m²)", micro:"Microperforado (m²)", pana:"Panaflex (m²)", lam:"Laminado (m²)", cin:"Cintra (m²)", est:"Rotulo panel (m²)", tensado:"Tensado (m²)", alu:"Alucobond (m²)", mdf:"MDF (m²)", arenado:"Vinil Arenado (m²)", plotter:"Corte Plóter (m²)", caja:"Caja de Luz (m²)", laser:"Corte Láser (min)", letras:"Letras 3D (cm)", instala:"Instalación", desinstala:"Desinstalación", tarjetas:"Tarjetas", flyers:"Flyers", papel:"Papel" };
 
 let preciosBase = JSON.parse(localStorage.getItem('viva_precios_v4')) || {
     lona:{pub:5.5,fin:8}, adh:{pub:5.5,fin:8}, micro:{pub:7,fin:9}, pana:{pub:9,fin:13}, lam:{pub:4,fin:5}, cin:{pub:8,fin:10}, est:{pub:35,fin:35}, alu:{pub:70,fin:70}, tensado:{pub:7,fin:7}, mdf:{pub:8,fin:10}, arenado:{pub:6.5,fin:10}, plotter:{pub:3,fin:4.5}, caja:{pub:65,fin:75},
@@ -596,5 +596,6 @@ inicializarUI();
 </script>
 </body>
 </html>
+
 
 
