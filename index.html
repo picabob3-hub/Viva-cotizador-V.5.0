@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viva Estudio - Cotizador Elite V7.0</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #000; --bg: #f8fafb; --card: #fff; --accent: #28a745; --warning: #f39200; --danger: #e53e3e; }
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; background: var(--bg); color: #333; margin: 0 0 250px 0; overflow-x: hidden; }
+        .container { max-width: 600px; margin: auto; padding: 10px; }
+        .black-bar { background: #000; padding: 8px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; height: 50px; }
+        .logo-text-alt { font-family: 'Comfortaa', cursive; font-size: 1.6em; color: #fff; display: flex; align-items: center; }
+        .logo-text-alt b { color: var(--warning); }
+        #logo-preview { max-height: 50px; max-width: 150px; object-fit: contain; }
+        
+        .btn-config { background: transparent; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .menu-icon { display: inline-block; width: 24px; height: 2px; background: white; position: relative; }
+        .menu-icon::before, .menu-icon::after { content: ""; width: 24px; height: 2px; background: white; position: absolute; left: 0; }
+        .menu-icon::before { top: -8px; }
+        .menu-icon::after { bottom: -8px; }
+
+        .card { background: var(--card); border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #edf2f7; cursor: pointer; }
+        .card-active { border-color: #c6f6d5; background: #f0fff4; }
+        .switch-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; height: 40px; }
+        input[type="number"] { text-align: center; }
+        .row-compact { display: flex; align-items: flex-end; gap: 4px; margin-bottom: 10px; width: 100%; }
+        .input-group { display: flex; flex-direction: column; flex: 1; min-width: 0; position: relative; }
+        .input-group label { font-size: 8px; font-weight: bold; color: #718096; text-transform: uppercase; margin-bottom: 2px; }
+        .unit-label { position: absolute; right: 5px; bottom: 10px; font-size: 10px; color: #a0aec0; pointer-events: none; }
+        .tgl { display: none; }
+        .tgl-btn { width: 34px; height: 18px; background: #e2e8f0; border-radius: 15px; position: relative; cursor: pointer; display: block; }
+        .tgl-btn:after { content: ""; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        .tgl:checked + .tgl-btn { background: var(--accent); }
+        .tgl:checked + .tgl-btn:after { left: 18px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 250; }
+        #sidePanel, #histPanel { position: fixed; top: 0; width: 85%; max-width: 400px; height: 100vh; background: white; transition: 0.3s; padding: 15px; overflow-y: auto; }
+        #sidePanel { right: -100%; z-index: 300; }
+        #sidePanel.open { right: 0; }
+        #histPanel { left: -100%; z-index: 400; }
+        #histPanel.open { left: 0; }
+        #subModal { display: none; position: fixed; top: 5%; left: 50%; transform: translateX(-50%); width: 95%; max-width: 400px; background: white; z-index: 500; border-radius: 12px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+        .total-box { background: #1a202c; color: white; padding: 15px; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; text-align: center; z-index: 150; }
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-group button { flex: 1; padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; }
+        .is-locked { opacity: 0.3; pointer-events: none; filter: grayscale(1); }
+        .btn-add-row { background: #f1f5f9; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; }
+        .cost-tag { font-weight: 800; color: #2d3748; text-align: right; min-width: 70px; font-size: 0.9em; }
+        .row-total-label { font-size: 9px; color: #28a745; font-weight: bold; text-align: right; min-width: 55px; }
+        .hist-item { font-size: 10px; padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; flex-direction: column; background: #fff; margin-bottom: 5px; border-radius: 6px; border: 1px solid #eee; }
+        .btn-panel-action { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; background: #f8fafb; border: 1px solid #ddd; font-weight: bold; cursor: pointer; text-align: left; }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; transform: translateX(-50%); top: 30px; font-size: 14px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {top: 0; opacity: 0;} to {top: 30px; opacity: 1;} }
+        @keyframes fadeout { from {top: 30px; opacity: 1;} to {top: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+<div id="toast">Notificación</div>
+<div class="overlay" id="overlay" onclick="closeModals()"></div>
+
+<div id="histPanel">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h2 style="margin:0; font-size:1.2em;">Historial</h2>
+        <button onclick="closeModals()" style="font-size:30px; border:none; background:none;">&times;</button>
+    </div>
+    <div style="margin-top:15px; position: sticky; top: 0; background: white; padding-bottom: 10px; z-index: 10;">
+        <input type="text" id="busquedaHistorial" placeholder="BUSCAR POR NOMBRE..." oninput="renderHistorial(this.value)" style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">
+    </div>
+    <div id="listaHistorial"></div>
+</div>
+
+<div id="subModal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <strong>Configuración y Respaldo</strong>
+        <button onclick="closeModals()" style="border:none; background:none; font-size:24px;">&times;</button>
+    </div>
+    
+    <div style="margin-bottom:15px; background: #f8fafb; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <label style="font-size:10px; font-weight:bold; color: #4a5568;">DATOS DE EMPRESA (PROFORMA):</label>
+        <div style="display:flex; gap:5px; margin-bottom:5px; margin-top:5px;">
+            <button onclick="aplicarFormato('b')" style="flex:1; padding:8px; font-size:10px; font-weight:bold; cursor:pointer; background: #edf2f7; border: 1px solid #cbd5e1; border-radius: 4px;">NEGRITA (B)</button>
+            <button onclick="aplicarFormato('br')" style="flex:1; padding:8px; font-size:10px; cursor:pointer; background: #edf2f7; border: 1px solid #cbd5e1; border-radius: 4px;">SALTO LÍNEA</button>
+        </div>
+        <textarea id="txtEmpresa" placeholder="Escribe aquí los datos de contacto y empresa..." style="height:100px; margin-bottom:5px; font-size: 12px;"></textarea>
+    </div>
+    
+    <div style="background:#edf2f7; padding:12px; border-radius:8px; margin-bottom:15px; border: 1px solid #cbd5e1;">
+        <label style="font-size:10px; font-weight:bold; color:#2d3748;">CREAR PRODUCTO PERSONALIZADO:</label>
+        <input type="text" id="nuevoNombre" placeholder="Nombre (ej. Triciclo)" style="margin-top:5px; height:30px;">
+        <div style="display:flex; gap:5px; margin-top:5px;">
+            <select id="nuevoSistema" style="flex:1; height:30px; font-size:11px;">
+                <option value="m2">m² (Ancho x Alto)</option>
+                <option value="lineal">cm lineal</option>
+                <option value="minutos">Minutos</option>
+                <option value="unidad">Valor dólares (Unidad)</option>
+            </select>
+            <input type="number" id="nuevoPrecioPub" placeholder="P. PUB" style="flex:0.5; height:30px;">
+            <input type="number" id="nuevoPrecioFin" placeholder="P. FIN" style="flex:0.5; height:30px;">
+        </div>
+        <button onclick="agregarAlCatalogo()" style="width:100%; margin-top:8px; background:var(--primary); color:white; border:none; padding:8px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">+ GUARDAR EN CATÁLOGO</button>
+    </div>
+
+    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px;">
+        <label style="font-size:10px; font-weight:bold;">SISTEMA DE RESPALDO:</label>
+        <div style="display:flex; gap:5px; margin-top:8px;">
+            <button onclick="exportarDatos()" style="flex:1; background:#4a5568; color:white; border:none; padding:12px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">EXP. RESPALDO</button>
+            <button onclick="document.getElementById('importFile').click()" style="flex:1; background:#2d3748; color:white; border:none; padding:12px; border-radius:6px; font-size:10px; font-weight:bold; cursor:pointer;">IMP. RESPALDO</button>
+            <input type="file" id="importFile" style="display:none" onchange="importarDatos(this)">
+        </div>
+    </div>
+
+    <div style="margin-bottom:15px;">
+        <label style="font-size:10px; font-weight:bold;">LOGO DE PROFORMA:</label>
+        <input type="file" id="inputLogo" accept="image/*" onchange="uploadLogo()" style="margin-top:5px; font-size:10px;">
+    </div>
+
+    <input type="text" id="firmaNombre" placeholder="Nombre para Firma" style="margin-bottom:5px;">
+    <input type="text" id="firmaCargo" placeholder="Cargo para Firma" style="margin-bottom:15px;">
+    <button onclick="saveEmpresa()" style="background:var(--accent); color:white; width:100%; padding:15px; border:none; border-radius:8px; font-weight:bold;">GUARDAR CONFIGURACIÓN</button>
+</div>
+
+<div id="sidePanel">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
+        <h2 style="margin:0; font-size:1.2em;">Ajustes</h2>
+        <button onclick="closeModals()" style="font-size:30px; border:none; background:none;">&times;</button>
+    </div>
+    
+    <button onclick="abrirEmpresa()" class="btn-panel-action">Configuración y Respaldo</button>
+    <button onclick="openHistorial()" class="btn-panel-action">Ver Historial de Ventas</button>
+    
+    <div id="cuerpoPrecios" style="font-size:11px; margin-top:20px;"></div>
+    <button onclick="savePrecios()" style="background:var(--accent); color:white; width:100%; padding:12px; border:none; border-radius:8px; margin-top:15px; font-weight:bold;">ACTUALIZAR PRECIOS</button>
+</div>
+
+<div class="black-bar">
+    <div id="display-logo" class="logo-text-alt"><b>viva</b> estudio</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button onclick="nuevaProforma()" style="background:#6c757d; border:none; color:white; font-weight:bold; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">+ NUEVA</button>
+        <button class="btn-config" onclick="openConfig()">
+            <span class="menu-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card" style="border:none; background:transparent; padding:0; cursor: default;">
+        <label style="font-size:11px; font-weight:bold; color:#718096;">CLIENTE</label>
+        <input type="text" id="nombreCliente" placeholder="Nombre Completo" style="margin-bottom:10px;">
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <div style="flex:1"><label style="font-size:11px; font-weight:bold; color:#718096;">RUC / C.I.</label><input type="text" id="rucCliente"></div>
+            <div style="flex:1"><label style="font-size:11px; font-weight:bold; color:#718096;">FECHA</label><input type="text" id="fechaEmision"></div>
+        </div>
+        <label style="font-size:11px; font-weight:bold; color:#718096;">TARIFA</label>
+        <select id="tipoCliente" onchange="desbloquearApp()" style="font-weight:bold; border:2px solid var(--accent);">
+            <option value="">-- Seleccionar --</option>
+            <option value="pub">Publicista (PUB)</option>
+            <option value="fin">Consumidor Final (FIN)</option>
+        </select>
+    </div>
+
+    <div id="mainApp" class="is-locked">
+        <div id="contenedorProductos"></div>
+        <div class="card" id="card_digital" onclick="smartToggle(event, 'digital')">
+            <div class="switch-container"><strong>Imp. Digital</strong><input class="tgl" type="checkbox" id="chk_digital" onclick="event.stopPropagation(); toggleCard('digital')"><label class="tgl-btn" for="chk_digital"></label></div>
+            <div id="content_digital" style="display:none;"><div id="filas_digital"></div><button class="btn-add-row" onclick="addFilaMedida('digital')">+ Fila</button><div class="cost-tag" id="tag_digital">$0.00</div></div>
+        </div>
+        <div id="contenedorImprenta"></div>
+        <div id="contenedorDinamico"></div>
+        <div class="card" id="card_laser" onclick="smartToggle(event, 'laser')">
+            <div class="switch-container"><strong>Corte Láser</strong><input class="tgl" type="checkbox" id="chk_laser" onclick="event.stopPropagation(); toggleCard('laser')"><label class="tgl-btn" for="chk_laser"></label></div>
+            <div id="content_laser" style="display:none;"><div id="filas_laser"></div><button class="btn-add-row" onclick="addFilaMedida('laser')">+ Tiempo</button><div class="cost-tag" id="tag_laser">$0.00</div></div>
+        </div>
+        <div class="card" id="card_letras" onclick="smartToggle(event, 'letras')">
+            <div class="switch-container"><strong>Letras 3D</strong><input class="tgl" type="checkbox" id="chk_letras" onclick="event.stopPropagation(); toggleCard('letras')"><label class="tgl-btn" for="chk_letras"></label></div>
+            <div id="content_letras" style="display:none;">
+                <select id="mat_letras" onchange="calcular()"><option value="acrilico_acrilico">Acrílico/Acrílico</option><option value="acrilico_aluminio">Acrílico/Aluminio</option><option value="tol">Tol</option><option value="acero">Acero</option></select>
+                <div style="display:flex; gap:12px; margin:15px 0; align-items:center;">
+                    <input type="checkbox" id="chk_ilumina" checked onchange="calcular()" style="width:25px; height:25px; accent-color:var(--accent);">
+                    <span style="font-weight:bold; font-size:14px;">Con LED</span>
+                </div>
+                <div id="filas_letras"></div><button class="btn-add-row" onclick="addFilaMedida('letras')">+ Fila</button><div class="cost-tag" id="tag_letras">$0.00</div>
+            </div>
+        </div>
+        <div class="card" id="card_instala" onclick="smartToggle(event, 'instala')">
+            <div class="switch-container"><strong>Instalación</strong><input class="tgl" type="checkbox" id="chk_instala" onclick="event.stopPropagation(); toggleCard('instala')"><label class="tgl-btn" for="chk_instala"></label></div>
+            <div id="content_instala" style="display:none;">
+                <div class="row-compact"><div class="input-group"><label>Piso</label><select id="p_instala" onchange="calcular()"><option value="p1">P1</option><option value="p2">P2</option><option value="p3">P3</option><option value="p4">P4+</option></select></div><div class="input-group"><label>Viáticos $</label><input type="number" id="v_instala" oninput="calcular()"></div></div>
+                <div class="cost-tag" id="tag_instala">$0.00</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="total-box">
+    <div style="display:flex; justify-content:center; gap:15px; font-size:0.75em; margin-bottom:8px; flex-wrap: wrap;">
+        <div>SUB: $<span id="subtotal">0.00</span></div>
+        <div>AJUSTE: <input type="number" id="adj_global" value="0" oninput="calcular()" style="width:40px; background:#333; color:white; border:none; height:20px;">%</div>
+        <div>IVA: $<span id="iva">0.00</span></div>
+        <div style="color:var(--warning)">ABONO: $<input type="number" id="abono_pago" value="0" oninput="calcular()" style="width:50px; background:#333; color:var(--warning); border:none; height:20px; font-weight:bold;"></div>
+    </div>
+    <div style="display:flex; justify-content: space-around; align-items: center;">
+        <div style="font-size:1.2em;">TOTAL: <b>$<span id="total">0.00</span></b></div>
+        <div style="font-size:1.2em;">SALDO: <b id="saldo_display">$<span id="saldo_final">0.00</span></b></div>
+    </div>
+    <div class="btn-group"><button style="background:#25d366" onclick="registrarYEnviar()">WhatsApp</button><button style="background:#4a5568" onclick="registrarYGenerar()">PDF Premium</button></div>
+</div>
+
+<script>
+// --- SERVICE WORKER REGISTRATION ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado', reg))
+      .catch(err => console.log('SW error', err));
+  });
+}
+
+window.onpopstate = function() { closeModals(); };
+
+let productosExtra = JSON.parse(localStorage.getItem('viva_productos_extra')) || [];
+const CLAVES_M2 = ['lona', 'adh', 'micro', 'pana', 'lam', 'cin', 'bastidor', 'panelado', 'tensado', 'alu', 'mdf', 'arenado', 'plotter', 'caja'];
+const DIC_NOMBRES = { 
+    lona:"Lona (m²)", adh:"Adhesivo (m²)", micro:"Microperforado (m²)", pana:"Panaflex (m²)", 
+    lam:"Laminado (m²)", cin:"PVC / Sintra (m²)", bastidor:"Bastidor Metálico (m²)", 
+    panelado:"Rótulo Panelado (m²)", tensado:"Tensado de Lona (m²)", alu:"Alucobond (m²)", 
+    mdf:"MDF (m²)", arenado:"Vinil Arenado (m²)", plotter:"Corte Plóter (m²)", 
+    caja:"Caja de Luz (m²)", laser:"Corte Láser (min)", digital:"Imp. Digital", 
+    tarjetas:"Tarjetas (1000u)", flyers:"Flyers (1000u)", papel:"Imp. Papel (1000u)", 
+    letras: "Letras 3D (cm)", instala: "Instalación",
+    p1: "Piso 1", p2: "Piso 2", p3: "Piso 3", p4: "Piso 4+",
+    d_a3: "Digital A3", d_a4: "Digital A4", d_a5: "Digital A5", d_sa3: "Digital Súper A3",
+    t_estandar: "Tarjetas Estándar", t_mate: "Tarjetas Mate", t_uv: "Tarjetas Brillo UV",
+    f_a6: "Flyers A6", f_a5: "Flyers A5", f_a4: "Flyers A4",
+    p_a3: "Papel A3", p_p3550: "Papel 35x50cm",
+    l_acrilico_acrilico: "Acrílico/Acrílico", l_acrilico_aluminio: "Acrílico/Aluminio",
+    l_tol: "Tol", l_acero: "Acero Inoxidable",
+    l_descuento_led: "Desc. Sin LED"
+};
+
+let preciosBase = JSON.parse(localStorage.getItem('viva_precios_v6.3')) || {
+    lona:{pub:5.5,fin:8}, adh:{pub:5.5,fin:8}, micro:{pub:7,fin:9}, pana:{pub:9,fin:13}, lam:{pub:4,fin:5}, cin:{pub:8,fin:10}, 
+    bastidor:{pub:14,fin:16}, panelado:{pub:35,fin:35}, tensado:{pub:7,fin:7}, alu:{pub:70,fin:70}, mdf:{pub:8,fin:10}, arenado:{pub:6.5,fin:10}, plotter:{pub:3,fin:4.5}, caja:{pub:65,fin:75},
+    laser:{pub:0.35,fin:0.35}, p1:{pub:15,fin:15}, p2:{pub:20,fin:20}, p3:{pub:30,fin:30}, p4:{pub:45,fin:45},
+    d_a3:{pub:1.40,fin:1.55}, d_a4:{pub:0.70,fin:0.80}, d_a5:{pub:0.35,fin:0.45}, d_sa3:{pub:1.75,fin:1.90},
+    t_estandar:{pub:15,fin:30}, t_mate:{pub:45,fin:45}, t_uv:{pub:50,fin:50}, f_a6:{pub:40,fin:40}, f_a5:{pub:55,fin:55}, f_a4:{pub:110,fin:110}, p_a3:{pub:180,fin:180}, p_p3550:{pub:190,fin:190},
+    l_acrilico_acrilico: {pub: 1.50, fin: 1.50}, l_acrilico_aluminio: {pub: 1.75, fin: 1.75}, l_tol: {pub: 1.90, fin: 1.90}, l_acero: {pub: 2.50, fin: 2.50},
+    l_descuento_led: {pub: 0.15, fin: 0.15}
+};
+
+// LÓGICA DE NÚMERO TEMPORAL: Usa la hora mientras carga de la nube
+let numeroProformaActual = Date.now().toString().slice(-5);
+const URL_NUBE = "https://script.google.com/macros/s/AKfycbw6o-tBVuM1R3Olz9kBfgeCC2v-oOlaPU2GeXEOOEybmiwKTMRvZC3OLd3hnZSsB7HY/exec";
+
+async function obtenerSiguienteProforma() {
+    try {
+        const respuesta = await fetch(URL_NUBE);
+        const num = await respuesta.text();
+        numeroProformaActual = num.toString().padStart(5, '0');
+    } catch (error) {
+        console.error("Usando ID temporal por falta de conexión");
+    }
+    
+    let numSpan = document.getElementById('proforma-number-display');
+    if(!numSpan){
+        numSpan = document.createElement('span');
+        numSpan.id = 'proforma-number-display';
+        numSpan.style = "font-size:0.6em; margin-left:10px; color:#f39200; font-family: sans-serif;";
+        document.getElementById('display-logo').appendChild(numSpan);
+    }
+    numSpan.innerText = `N° ${numeroProformaActual}`;
+}
+
+let memAncho="", memAlto="";
+
+function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.innerText = msg; t.className = "show";
+    setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+}
+
+function agregarAlCatalogo() {
+    const nombre = document.getElementById('nuevoNombre').value;
+    const sistema = document.getElementById('nuevoSistema').value;
+    const pub = parseFloat(document.getElementById('nuevoPrecioPub').value) || 0;
+    const fin = parseFloat(document.getElementById('nuevoPrecioFin').value) || 0;
+    if(!nombre) return showToast("Falta nombre");
+    const nuevo = { id: 'extra_' + Date.now(), nombre, sistema, pub, fin };
+    productosExtra.push(nuevo);
+    localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra));
+    document.getElementById('nuevoNombre').value = "";
+    renderExtras(); renderAjustes(); showToast("Producto creado");
+}
+
+function renderExtras() {
+    const cont = document.getElementById('contenedorDinamico');
+    cont.innerHTML = "";
+    productosExtra.forEach(p => {
+        cont.innerHTML += `<div class="card" id="card_${p.id}" onclick="smartToggle(event, '${p.id}')"><div class="switch-container"><strong>${p.nombre}</strong><input class="tgl" type="checkbox" id="chk_${p.id}" onclick="event.stopPropagation(); toggleCard('${p.id}')"><label class="tgl-btn" for="chk_${p.id}"></label></div><div id="content_${p.id}" style="display:none; padding-top:10px;"><div id="filas_${p.id}"></div><button class="btn-add-row" onclick="addFilaExtra('${p.id}', '${p.sistema}')">+ Fila</button><div class="cost-tag" id="tag_${p.id}">$0.00</div></div></div>`;
+    });
+}
+
+function addFilaExtra(id, sistema) {
+    const contenedor = document.getElementById('filas_' + id);
+    const div = document.createElement('div'); div.className = 'row-compact';
+    if(sistema === 'm2') {
+        div.innerHTML = `<div class="input-group"><label>An</label><input type="number" class="anc-val" oninput="calcular()"><span class="unit-label">m</span></div><div class="input-group"><label>Al</label><input type="number" class="alt-val" oninput="calcular()"><span class="unit-label">m</span></div><div class="input-group" style="flex:0.6;"><label>Cant</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">u</span></div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+    } else {
+        const labelText = (sistema==='lineal')?'cm':(sistema==='minutos'?'min':'un');
+        div.innerHTML = `<div class="input-group"><label>${labelText.toUpperCase()}</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">${labelText}</span></div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+    }
+    contenedor.appendChild(div);
+}
+
+function syncFirstRow(id, el, axis) {
+    const c = document.getElementById('filas_' + id);
+    if (el.parentElement.parentElement === c.firstElementChild) { if (axis === 'w') memAncho = el.value; else memAlto = el.value; }
+    calcular();
+}
+
+function renderHistorial(filtro = "") {
+    const h = JSON.parse(localStorage.getItem('viva_hist_pro')) || [];
+    const contenedor = document.getElementById('listaHistorial');
+    const term = filtro.toLowerCase();
+    contenedor.innerHTML = h.filter(item => item.data.cliente.toLowerCase().includes(term))
+        .map((item, i) => `<div class="hist-item" onclick="cargarDeHistorial(${i})"><strong>${item.data.cliente.toUpperCase() || 'S/N'}</strong><div style="display:flex; justify-content:space-between; font-size:10px;"><span>Total: $${item.total}</span><span>${item.fecha}</span></div></div>`).join('');
+}
+
+function cargarDeHistorial(index) {
+    const hist = JSON.parse(localStorage.getItem('viva_hist_pro')) || []; const data = hist[index].data;
+    const ids = [...CLAVES_M2, 'digital', 'tarjetas', 'flyers', 'papel', 'laser', 'letras', 'instala', ...productosExtra.map(p => p.id)];
+    ids.forEach(id => { 
+        if(document.getElementById('chk_'+id)) document.getElementById('chk_'+id).checked = false; 
+        const fCont = (id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id)); 
+        if(document.getElementById(fCont)) document.getElementById(fCont).innerHTML = ""; 
+        toggleCard(id); 
+    });
+    document.getElementById('nombreCliente').value = data.cliente; 
+    document.getElementById('rucCliente').value = data.ruc; 
+    document.getElementById('tipoCliente').value = data.tipo; 
+    document.getElementById('adj_global').value = data.ajuste;
+    if(data.abono) document.getElementById('abono_pago').value = data.abono;
+    desbloquearApp();
+    data.productos.forEach(p => {
+        if(document.getElementById('chk_'+p.id)) {
+            document.getElementById('chk_'+p.id).checked = true; toggleCard(p.id);
+            const fCont = p.id==='letras'?'filas_letras':(p.id==='laser'?'filas_laser':'filas_'+p.id);
+            p.filas.forEach(fData => {
+                if(p.id.startsWith('extra_')) { const exP = productosExtra.find(ex => ex.id === p.id); addFilaExtra(p.id, exP.sistema); } else { addFilaMedida(p.id); }
+                const row = document.getElementById(fCont).lastElementChild;
+                if(row.querySelector('.anc-val')) row.querySelector('.anc-val').value = fData.w;
+                if(row.querySelector('.alt-val')) row.querySelector('.alt-val').value = fData.h;
+                if(row.querySelector('.cant-val')) row.querySelector('.cant-val').value = fData.c;
+                if(row.querySelector('.tipo-val')) row.querySelector('.tipo-val').value = fData.t;
+                if(row.querySelector('.extra-val')) row.querySelector('.extra-val').checked = fData.e;
+            });
+        }
+    });
+    calcular(); closeModals();
+}
+
+function registrarVenta() {
+    const total = document.getElementById('total').innerText;
+    const data = { cliente: document.getElementById('nombreCliente').value, ruc: document.getElementById('rucCliente').value, tipo: document.getElementById('tipoCliente').value, ajuste: document.getElementById('adj_global').value, abono: document.getElementById('abono_pago').value, productos: [] };
+    const ids = [...CLAVES_M2, 'digital', 'tarjetas', 'flyers', 'papel', 'laser', 'letras', 'instala', ...productosExtra.map(p=>p.id)];
+    ids.forEach(id => {
+        if(document.getElementById('chk_'+id)?.checked) {
+            let filas = []; const fCont = id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id);
+            if(document.getElementById(fCont)) {
+                document.getElementById(fCont).querySelectorAll('.row-compact').forEach(f => {
+                    filas.push({ w: f.querySelector('.anc-val')?.value || "", h: f.querySelector('.alt-val')?.value || "", c: f.querySelector('.cant-val')?.value || "1", t: f.querySelector('.tipo-val')?.value || "", e: f.querySelector('.extra-val')?.checked || false });
+                });
+            }
+            data.productos.push({ id, filas });
+        }
+    });
+    let hist = JSON.parse(localStorage.getItem('viva_hist_pro')) || [];
+    hist.unshift({ fecha: new Date().toLocaleString(), total, data });
+    if(hist.length > 30) hist.pop();
+    localStorage.setItem('viva_hist_pro', JSON.stringify(hist));
+}
+
+function enviarALaNube() {
+    let detalleCompleto = [];
+    const ids = [...CLAVES_M2, 'digital', 'tarjetas', 'flyers', 'papel', 'laser', 'letras', 'instala', ...productosExtra.map(p=>p.id)];
+    
+    ids.forEach(id => {
+        if(document.getElementById('chk_'+id)?.checked) {
+            let nombreProd = DIC_NOMBRES[id] || productosExtra.find(ex => ex.id === id)?.nombre || id;
+            let filasTexto = [];
+            const fContId = (id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id));
+            const contenedor = document.getElementById(fContId);
+            
+            if(contenedor) {
+                contenedor.querySelectorAll('.row-compact').forEach(f => {
+                    let cant = f.querySelector('.cant-val')?.value || "1";
+                    let anc = f.querySelector('.anc-val')?.value || "";
+                    let alt = f.querySelector('.alt-val')?.value || "";
+                    let tipo = f.querySelector('.tipo-val')?.value || "";
+                    if(anc && alt) filasTexto.push(`${anc}x${alt}m (x${cant})`);
+                    else if(tipo) filasTexto.push(`${tipo.toUpperCase()} (x${cant})`);
+                    else filasTexto.push(`Cant: ${cant}`);
+                });
+            }
+            let subtotal = document.getElementById('tag_'+id)?.innerText || "";
+            detalleCompleto.push(`${nombreProd.toUpperCase()}: [${filasTexto.join(", ")}] Sub: ${subtotal}`);
+        }
+    });
+
+    const dataVenta = {
+        proforma: numeroProformaActual,
+        fecha: new Date().toLocaleString(),
+        cliente: (document.getElementById('nombreCliente').value || "S/N").toUpperCase(),
+        ruc: document.getElementById('rucCliente').value || "S/N",
+        total: document.getElementById('total').innerText,
+        abono: document.getElementById('abono_pago').value,
+        saldo: document.getElementById('saldo_final').innerText,
+        tipo: (document.getElementById('tipoCliente').value || "FIN").toUpperCase(),
+        detalles: detalleCompleto.join(" // ")
+    };
+
+    fetch(URL_NUBE, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataVenta)
+    }).then(() => {
+        showToast("✅ N° " + numeroProformaActual + " Guardado");
+        obtenerSiguienteProforma();
+    });
+}
+
+function inicializarUI() {
+    document.getElementById('fechaEmision').value = new Date().toLocaleDateString();
+    const contM2 = document.getElementById('contenedorProductos'); contM2.innerHTML = "";
+    CLAVES_M2.forEach(id => {
+        contM2.innerHTML += `<div class="card" id="card_${id}" onclick="smartToggle(event, '${id}')"><div class="switch-container"><span>${DIC_NOMBRES[id]}</span><input class="tgl" type="checkbox" id="chk_${id}" onclick="event.stopPropagation(); toggleCard('${id}')"><label class="tgl-btn" for="chk_${id}"></label></div><div id="content_${id}" style="display:none; padding-top:10px;"><div id="filas_${id}"></div><button class="btn-add-row" onclick="addFilaMedida('${id}')">+ Medida</button><div class="cost-tag" id="tag_${id}">$0.00</div></div></div>`;
+    });
+    const contImp = document.getElementById('contenedorImprenta'); contImp.innerHTML = "";
+    ['tarjetas', 'flyers', 'papel'].forEach(id => {
+        contImp.innerHTML += `<div class="card" id="card_${id}" onclick="smartToggle(event, '${id}')"><div class="switch-container"><span>${DIC_NOMBRES[id]}</span><input class="tgl" type="checkbox" id="chk_${id}" onclick="event.stopPropagation(); toggleCard('${id}')"><label class="tgl-btn" for="chk_${id}"></label></div><div id="content_${id}" style="display:none; padding-top:10px;"><div id="filas_${id}"></div><button class="btn-add-row" onclick="addFilaMedida('${id}')">+ Fila</button><div class="cost-tag" id="tag_${id}">$0.00</div></div></div>`;
+    });
+    renderExtras(); loadBranding(); renderAjustes(); obtenerSiguienteProforma();
+}
+
+function addFilaMedida(id) {
+    const fId = id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id);
+    const contenedor = document.getElementById(fId); if(!contenedor) return;
+    const div = document.createElement('div'); div.className = 'row-compact';
+    if(CLAVES_M2.includes(id)) {
+        div.innerHTML = `<div class="input-group"><label>An</label><input type="number" class="anc-val" oninput="syncFirstRow('${id}', this, 'w')"><span class="unit-label">m</span></div><div class="input-group"><label>Al</label><input type="number" class="alt-val" oninput="syncFirstRow('${id}', this, 'h')"><span class="unit-label">m</span></div><div class="input-group" style="flex:0.6;"><label>Cant</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">u</span></div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+        if(contenedor.children.length === 0) { div.querySelector('.anc-val').value = memAncho; div.querySelector('.alt-val').value = memAlto; }
+    } else if(id === 'digital') {
+        div.innerHTML = `<div class="input-group"><label>Medida</label><select class="tipo-val" onchange="calcular()"><option value="a3">A3</option><option value="a4">A4</option><option value="a5">A5</option><option value="sa3">Súper A3</option></select></div><div class="input-group" style="flex:0.8;"><label>Cant</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">u</span></div><div style="padding-bottom:10px; display:flex; flex-direction:column; align-items:center;"><label style="font-size:7px;">ESP</label><input type="checkbox" class="extra-val" onchange="calcular()" style="width:16px; height:16px;"></div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+    } else if(id === 'tarjetas' || id === 'flyers' || id === 'papel') {
+        const op = id==='tarjetas'?'<option value="estandar">Estándar</option><option value="mate">Mate</option><option value="uv">UV</option>':(id==='flyers'?'<option value="a6">A6</option><option value="a5">A5</option><option value="a4">A4</option>':'<option value="a3">A3</option><option value="p3550">35x50</option>');
+        div.innerHTML = `<div class="input-group"><label>Tipo</label><select class="tipo-val" onchange="calcular()">${op}</select></div><div class="input-group" style="flex:0.6;"><label>Cant</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">x1k</span></div><div style="padding-bottom:10px; display:flex; flex-direction:column; align-items:center;">${id==='tarjetas'?'<label style="font-size:7px;">PUN</label><input type="checkbox" class="extra-val" onchange="calcular()" style="width:16px; height:16px;">':''}</div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+    } else if(id === 'letras' || id === 'laser') {
+        div.innerHTML = `<div class="input-group"><label>${id==='letras'?'cm':'min'}</label><input type="number" class="alt-val" oninput="calcular()"><span class="unit-label">${id==='letras'?'cm':'min'}</span></div><div class="input-group" style="flex:0.6;"><label>Cant</label><input type="number" class="cant-val" value="1" oninput="calcular()"><span class="unit-label">u</span></div><div class="row-total-label"></div><button onclick="this.parentElement.remove(); calcular();" style="border:none; background:none; color:red; font-size:18px;">&times;</button>`;
+    }
+    contenedor.appendChild(div); calcular();
+}
+
+function calcular() {
+    const pK = document.getElementById('tipoCliente').value; if(!pK) return;
+    let sub = 0;
+    CLAVES_M2.forEach(id => {
+        if(document.getElementById('chk_'+id)?.checked) {
+            let tI = 0; document.getElementById('filas_'+id).querySelectorAll('.row-compact').forEach(f => {
+                const l = (parseFloat(f.querySelector('.anc-val').value)||0)*(parseFloat(f.querySelector('.alt-val').value)||0)*(parseFloat(f.querySelector('.cant-val').value)||0)*preciosBase[id][pK];
+                f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tI += l;
+            });
+            document.getElementById('tag_'+id).innerText = "$"+tI.toFixed(2); sub += tI;
+        }
+    });
+    if(document.getElementById('chk_digital').checked) {
+        let tD = 0; document.getElementById('filas_digital').querySelectorAll('.row-compact').forEach(f => {
+            const l = (preciosBase['d_'+f.querySelector('.tipo-val').value][pK] + (f.querySelector('.extra-val').checked ? 0.5 : 0)) * (parseFloat(f.querySelector('.cant-val').value)||0);
+            f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tD += l;
+        });
+        document.getElementById('tag_digital').innerText = "$"+tD.toFixed(2); sub += tD;
+    }
+    productosExtra.forEach(p => {
+        if(document.getElementById('chk_'+p.id)?.checked) {
+            let tE = 0; document.getElementById('filas_'+p.id).querySelectorAll('.row-compact').forEach(f => {
+                let l = (p.sistema === 'm2') ? (parseFloat(f.querySelector('.anc-val').value)||0)*(parseFloat(f.querySelector('.alt-val').value)||0)*(parseFloat(f.querySelector('.cant-val').value)||0)*p[pK] : (parseFloat(f.querySelector('.cant-val').value)||0)*p[pK];
+                f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tE += l;
+            });
+            document.getElementById('tag_'+p.id).innerText = "$"+tE.toFixed(2); sub += tE;
+        }
+    });
+    ['tarjetas','flyers','papel'].forEach(id => {
+        if(document.getElementById('chk_'+id)?.checked) {
+            let tI = 0; document.getElementById('filas_'+id).querySelectorAll('.row-compact').forEach(f => {
+                let p = preciosBase[(id==='tarjetas'?'t_':id==='flyers'?'f_':'p_')+f.querySelector('.tipo-val').value][pK];
+                if(id==='tarjetas' && f.querySelector('.extra-val')?.checked) p += 5;
+                const l = p * (parseFloat(f.querySelector('.cant-val').value)||0);
+                f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tI += l;
+            });
+            document.getElementById('tag_'+id).innerText = "$"+tI.toFixed(2); sub += tI;
+        }
+    });
+    if(document.getElementById('chk_laser').checked) {
+        let tL = 0; document.getElementById('filas_laser').querySelectorAll('.row-compact').forEach(f => {
+            const l = (parseFloat(f.querySelector('.alt-val').value)||0)*(parseFloat(f.querySelector('.cant-val').value)||0)*preciosBase.laser[pK];
+            f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tL += l;
+        });
+        document.getElementById('tag_laser').innerText = "$"+tL.toFixed(2); sub += tL;
+    }
+    if(document.getElementById('chk_letras').checked) {
+        const mat = document.getElementById('mat_letras').value; 
+        const descLED = document.getElementById('chk_ilumina').checked ? 0 : (preciosBase.l_descuento_led ? preciosBase.l_descuento_led[pK] : 0.15);
+        const pFinal = preciosBase['l_'+mat][pK] - descLED;
+        let tL = 0; document.getElementById('filas_letras').querySelectorAll('.row-compact').forEach(f => {
+            const l = (parseFloat(f.querySelector('.alt-val').value)||0)*(parseFloat(f.querySelector('.cant-val').value)||0)*pFinal;
+            f.querySelector('.row-total-label').innerText = l>0?"$"+l.toFixed(2):""; tL += l;
+        });
+        document.getElementById('tag_letras').innerText = "$"+tL.toFixed(2); sub += tL;
+    }
+    if(document.getElementById('chk_instala').checked) {
+        const totalInst = preciosBase[document.getElementById('p_instala').value][pK] + (parseFloat(document.getElementById('v_instala').value) || 0);
+        document.getElementById('tag_instala').innerText = "$"+totalInst.toFixed(2); sub += totalInst;
+    }
+
+    const aj = parseFloat(document.getElementById('adj_global').value) || 0;
+    const subAj = sub * (1 + (aj/100));
+    const totalCalc = subAj * 1.15;
+    const abono = parseFloat(document.getElementById('abono_pago').value) || 0;
+    const saldo = totalCalc - abono;
+    document.getElementById('subtotal').innerText = sub.toFixed(2);
+    document.getElementById('iva').innerText = (subAj * 0.15).toFixed(2);
+    document.getElementById('total').innerText = totalCalc.toFixed(2);
+    document.getElementById('saldo_final').innerText = saldo.toFixed(2);
+    const sDisp = document.getElementById('saldo_display');
+    if (saldo <= 0.01) sDisp.style.color = "var(--accent)"; else if (saldo < (totalCalc * 0.5)) sDisp.style.color = "var(--warning)"; else sDisp.style.color = "var(--danger)";
+}
+
+function toggleCard(id) { 
+    if(!document.getElementById('chk_'+id)) return;
+    const ac = document.getElementById('chk_'+id).checked; document.getElementById('card_'+id).classList.toggle('card-active', ac);
+    document.getElementById('content_'+id).style.display = ac ? 'block' : 'none';
+    const fId = (id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id));
+    if(ac && document.getElementById(fId)?.children.length === 0) {
+        if(id.startsWith('extra_')) { const exP = productosExtra.find(ex => ex.id === id); addFilaExtra(id, exP.sistema); } else { addFilaMedida(id); }
+    }
+    calcular();
+}
+
+function smartToggle(e, id) { if(!["INPUT", "SELECT", "BUTTON", "LABEL"].includes(e.target.tagName)) { const c = document.getElementById('chk_'+id); c.checked = !c.checked; toggleCard(id); } }
+function desbloquearApp() { document.getElementById('mainApp').className = document.getElementById('tipoCliente').value ? "" : "is-locked"; calcular(); }
+function openConfig() { history.pushState({modal: 'config'}, ""); document.getElementById('sidePanel').classList.add('open'); document.getElementById('overlay').style.display='block'; }
+function openHistorial() { history.pushState({modal: 'historial'}, ""); document.getElementById('sidePanel').classList.remove('open'); renderHistorial(); document.getElementById('histPanel').classList.add('open'); document.getElementById('overlay').style.display='block'; }
+function abrirEmpresa() { history.pushState({modal: 'empresa'}, ""); document.getElementById('subModal').style.display='block'; }
+function closeModals() { 
+    document.getElementById('sidePanel').classList.remove('open'); 
+    document.getElementById('histPanel').classList.remove('open'); 
+    document.getElementById('subModal').style.display='none'; 
+    document.getElementById('overlay').style.display='none'; 
+}
+
+function saveEmpresa() { localStorage.setItem('viva_emp_txt', document.getElementById('txtEmpresa').value); localStorage.setItem('viva_firma_nom', document.getElementById('firmaNombre').value); localStorage.setItem('viva_firma_car', document.getElementById('firmaCargo').value); showToast("Guardado"); closeModals(); }
+
+function loadBranding() { 
+    const l = localStorage.getItem('viva_logo'); 
+    const logoContainer = document.getElementById('display-logo');
+    if(l) {
+        logoContainer.innerHTML = `<img src="${l}" id="logo-preview">`;
+    } else {
+        logoContainer.innerHTML = `<b>viva</b> estudio`;
+    }
+    document.getElementById('txtEmpresa').value=localStorage.getItem('viva_emp_txt')||""; 
+    document.getElementById('firmaNombre').value=localStorage.getItem('viva_firma_nom')||""; 
+    document.getElementById('firmaCargo').value=localStorage.getItem('viva_firma_car')||""; 
+}
+
+function uploadLogo() { const f = document.getElementById('inputLogo').files[0], r = new FileReader(); r.onloadend = () => { localStorage.setItem('viva_logo', r.result); loadBranding(); obtenerSiguienteProforma(); showToast("Logo actualizado"); }; if(f) r.readAsDataURL(f); }
+
+function renderAjustes() { 
+    const b = document.getElementById('cuerpoPrecios'); b.innerHTML = "<strong>Precios Unitarios:</strong><br><br>"; 
+    Object.keys(preciosBase).forEach(id => { 
+        let nom = DIC_NOMBRES[id] || id.toUpperCase(); 
+        b.innerHTML += `<div style="display:flex; align-items:center; gap:5px; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="flex:1; font-size:10px;">${nom}</span><div style="display:flex; gap:2px;"><input type="number" id="adj_pub_${id}" value="${preciosBase[id].pub}" style="width:48px; height:26px; font-size:11px;"><input type="number" id="adj_fin_${id}" value="${preciosBase[id].fin}" style="width:48px; height:26px; font-size:11px;"></div></div>`; 
+    });
+    if(productosExtra.length > 0) { b.innerHTML += "<br><strong>Personalizados:</strong><br><br>"; productosExtra.forEach(p => { b.innerHTML += `<div style="display:flex; align-items:center; gap:5px; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px;"><span style="flex:1; font-size:10px; color:var(--accent)">${p.nombre}</span><div style="display:flex; gap:2px;"><input type="number" id="adj_pub_${p.id}" value="${p.pub}" style="width:48px; height:26px; font-size:11px;"><input type="number" id="adj_fin_${p.id}" value="${p.fin}" style="width:48px; height:26px; font-size:11px;"></div><button onclick="eliminarExtra('${p.id}')" style="border:none; background:none; color:red;">&times;</button></div>`; }); }
+}
+
+function eliminarExtra(id) { if(confirm("¿Eliminar?")) { productosExtra = productosExtra.filter(p => p.id !== id); localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra)); renderExtras(); renderAjustes(); calcular(); } }
+
+function savePrecios() { Object.keys(preciosBase).forEach(id => { if(document.getElementById("adj_pub_"+id)){ preciosBase[id].pub = parseFloat(document.getElementById("adj_pub_"+id).value); preciosBase[id].fin = parseFloat(document.getElementById("adj_fin_"+id).value); } }); productosExtra.forEach(p => { if(document.getElementById("adj_pub_"+p.id)){ p.pub = parseFloat(document.getElementById("adj_pub_"+p.id).value); p.fin = parseFloat(document.getElementById("adj_fin_"+p.id).value); } }); localStorage.setItem('viva_precios_v6.3', JSON.stringify(preciosBase)); localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra)); showToast("Precios actualizados"); }
+
+function exportarDatos() { const data = { precios: preciosBase, extras: productosExtra, config: { emp: localStorage.getItem('viva_emp_txt'), nom: localStorage.getItem('viva_firma_nom'), car: localStorage.getItem('viva_firma_car'), logo: localStorage.getItem('viva_logo') } }; const blob = new Blob([JSON.stringify(data)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `VIVA_RESPALDO.json`; a.click(); }
+
+function importarDatos(input) { const reader = new FileReader(); reader.onload = () => { const d = JSON.parse(reader.result); preciosBase = d.precios; productosExtra = d.extras || []; localStorage.setItem('viva_logo', d.config.logo); localStorage.setItem('viva_emp_txt', d.config.emp); localStorage.setItem('viva_firma_nom', d.config.nom); localStorage.setItem('viva_firma_car', d.config.car); localStorage.setItem('viva_precios_v6.3', JSON.stringify(preciosBase)); localStorage.setItem('viva_productos_extra', JSON.stringify(productosExtra)); location.reload(); }; reader.readAsText(input.files[0]); }
+
+function registrarYGenerar() {
+    enviarALaNube(); 
+    registrarVenta();
+    
+    const cliente = (document.getElementById('nombreCliente').value || "CLIENTE").toUpperCase();
+    const ruc = document.getElementById('rucCliente').value || "---";
+    const fecha = document.getElementById('fechaEmision').value;
+    const logo = localStorage.getItem('viva_logo') || "";
+    const infoEmpresa = (localStorage.getItem('viva_emp_txt') || "");
+    const firmaN = localStorage.getItem('viva_firma_nom') || "ADMINISTRADOR";
+    const firmaC = localStorage.getItem('viva_firma_car') || "VIVA ESTUDIO";
+    
+    let filasHTML = "";
+    const ids = [...CLAVES_M2, 'digital', 'tarjetas', 'flyers', 'papel', 'laser', 'letras', 'instala', ...productosExtra.map(p=>p.id)];
+    
+    ids.forEach(id => {
+        if(document.getElementById('chk_'+id)?.checked) {
+            const nombreProd = DIC_NOMBRES[id] || productosExtra.find(ex => x.id === id)?.nombre || id;
+            const fContId = (id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id));
+            const contenedor = document.getElementById(fContId);
+            
+            if(contenedor) {
+                contenedor.querySelectorAll('.row-compact').forEach(f => {
+                    let cant = f.querySelector('.cant-val')?.value || "1";
+                    let anc = f.querySelector('.anc-val')?.value || "";
+                    let alt = f.querySelector('.alt-val')?.value || "";
+                    let tipo = f.querySelector('.tipo-val')?.value || "";
+                    let totalFila = f.querySelector('.row-total-label')?.innerText || "";
+                    
+                    let detalle = "";
+                    if(anc && alt) detalle = `${anc} x ${alt} m`;
+                    else if(tipo) {
+                        const sel = f.querySelector('.tipo-val');
+                        detalle = sel.options[sel.selectedIndex].text;
+                    }
+                    else if(id === 'letras' || id === 'laser') detalle = `${f.querySelector('.alt-val').value} ${id==='letras'?'cm':'min'}`;
+
+                    filasHTML += `
+                        <tr>
+                            <td style="text-align:center">${cant}</td>
+                            <td><strong style="color:#000">${nombreProd.toUpperCase()}</strong><br><small>${detalle}</small></td>
+                            <td style="text-align:right">${totalFila}</td>
+                        </tr>`;
+                });
+            } else if (id === 'instala') {
+                filasHTML += `<tr><td style="text-align:center">1</td><td>INSTALACIÓN</td><td style="text-align:right">${document.getElementById('tag_instala').innerText}</td></tr>`;
+            }
+        }
+    });
+
+    const v = window.open("", "_blank");
+    v.document.write(`
+    <html>
+    <head>
+        <title>Proforma ${numeroProformaActual}</title>
+        <style>
+            @media print { 
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } 
+            }
+            body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; color: #333; }
+            .black-header { background: #000; color: #fff; padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; }
+            .logo-img { max-height: 70px; filter: drop-shadow(0 0 2px rgba(255,255,255,0.2)); }
+            .company-info { text-align: right; font-size: 8.5pt; line-height: 1.5; color: #bbb; }
+            .main-content { padding: 20px 40px; }
+            .title-area { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+            .title-area h1 { margin: 0; font-size: 32pt; color: #f0f0f0; letter-spacing: 8px; text-transform: uppercase; line-height: 1; }
+            .proforma-num { font-size: 14pt; font-weight: bold; color: #333; text-align: right; }
+            .proforma-num span { color: #f39200; font-size: 16pt; }
+            .cli-box { margin-top: 15px; display: flex; justify-content: space-between; background: #f8fafb; padding: 8px; border-radius: 10px; border: 1px solid #edf2f7; }
+            table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+            th { background: #f1f5f9; color: #475569; padding: 12px; font-size: 9pt; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }
+            td { padding: 4px; border-bottom: 1px solid #f1f5f9; font-size: 10pt; line-height: 1.1;}
+            .totals-table { width: 260px; margin-left: auto; margin-top: 20px; }
+            .totals-table td { border: none; padding: 2px; line-height: 1.2; }
+            .total-row { font-size: 13pt; font-weight: bold; color: #000; border-top: 2px solid #000 !important; }
+            .footer { margin-top: 80px; display: flex; justify-content: space-around; text-align: center; }
+            .signature { border-top: 1px solid #ccc; width: 220px; padding-top: 10px; font-size: 9pt; color: #666; }
+        </style>
+    </head>
+    <body>
+        <div class="black-header">
+            <div>${logo ? `<img src="${logo}" class="logo-img">` : '<h1 style="margin:0; color:#fff;">VIVA ESTUDIO</h1>'}</div>
+            <div class="company-info">${infoEmpresa}</div>
+        </div>
+        <div class="main-content">
+            <div class="title-area"><h1>Proforma</h1><div class="proforma-num">NÚMERO: <span>${numeroProformaActual}</span></div></div>
+            <div class="cli-box"><div><div style="font-size:8pt; color:#718096; font-weight:bold;">DATOS DEL CLIENTE</div><div style="margin-top:4px;"><strong>NOMBRE:</strong> ${cliente}</div><div><strong>RUC/CI:</strong> ${ruc}</div></div><div style="text-align:right"><div style="font-size:8pt; color:#718096; font-weight:bold;">EMISIÓN</div><div style="margin-top:4px;">${fecha}</div></div></div>
+            <table><thead><tr><th width="10%">CANT.</th><th width="70%" style="text-align:left">DESCRIPCIÓN DE PRODUCTO / SERVICIO</th><th width="20%" style="text-align:right">TOTAL</th></tr></thead><tbody>${filasHTML}</tbody></table>
+            <table class="totals-table">
+                <tr><td>SUBTOTAL:</td><td style="text-align:right">$${document.getElementById('subtotal').innerText}</td></tr>
+                <tr><td>IVA (15%):</td><td style="text-align:right">$${document.getElementById('iva').innerText}</td></tr>
+                <tr class="total-row"><td>TOTAL:</td><td style="text-align:right">$${document.getElementById('total').innerText}</td></tr>
+                <tr><td style="color:#f39200">ABONO:</td><td style="text-align:right; color:#f39200">-$${parseFloat(document.getElementById('abono_pago').value).toFixed(2)}</td></tr>
+                <tr style="font-weight:bold; font-size:12pt; background:#f1f5f9"><td>SALDO:</td><td style="text-align:right">$${document.getElementById('saldo_final').innerText}</td></tr>
+            </table>
+            <div class="footer"><div class="signature"><strong>${firmaN}</strong><br>${firmaC}<br>FIRMA AUTORIZADA</div><div class="signature"><br>RECIBÍ CONFORME (CLIENTE)</div></div>
+        </div>
+        <script>setTimeout(() => { window.print(); }, 500);<\/script>
+    </body>
+    </html>`);
+}
+
+function registrarYEnviar() { registrarVenta(); window.open(`https://wa.me/?text=*VIVA ESTUDIO*%0A*CLIENTE:* ${document.getElementById('nombreCliente').value}%0A*TOTAL:* $${document.getElementById('total').innerText}%0A*SALDO:* $${document.getElementById('saldo_final').innerText}`); }
+
+function aplicarFormato(tipo) {
+    const area = document.getElementById('txtEmpresa');
+    const start = area.selectionStart;
+    const end = area.selectionEnd;
+    const texto = area.value;
+    const seleccionado = texto.substring(start, end);
+    if (tipo === 'b') area.value = texto.substring(0, start) + "<b>" + seleccionado + "</b>" + texto.substring(end);
+    else if (tipo === 'br') area.value = texto.substring(0, start) + "<br>" + seleccionado + texto.substring(end);
+    area.focus();
+}
+
+function nuevaProforma() {
+    if(confirm("¿Deseas limpiar todo para una nueva proforma?")) {
+        document.getElementById('nombreCliente').value = "";
+        document.getElementById('rucCliente').value = "";
+        document.getElementById('abono_pago').value = "0";
+        document.getElementById('adj_global').value = "0";
+        document.getElementById('tipoCliente').value = "";
+        desbloquearApp();
+        const ids = [...CLAVES_M2, 'digital', 'tarjetas', 'flyers', 'papel', 'laser', 'letras', 'instala', ...productosExtra.map(p=>p.id)];
+        ids.forEach(id => {
+            const chk = document.getElementById('chk_' + id);
+            if(chk) {
+                chk.checked = false;
+                toggleCard(id);
+                const fContId = (id==='letras'?'filas_letras':(id==='laser'?'filas_laser':'filas_'+id));
+                const contenedor = document.getElementById(fContId);
+                if(contenedor) contenedor.innerHTML = "";
+            }
+        });
+        calcular();
+        // Genera nuevo número temporal mientras consulta a la nube
+        numeroProformaActual = Date.now().toString().slice(-5);
+        obtenerSiguienteProforma();
+        showToast("Formulario Reiniciado");
+        window.scrollTo(0,0);
+    }
+}
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
+    });
+}
+
+inicializarUI();
+</script>
+</body>
+</html>
